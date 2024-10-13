@@ -1,179 +1,186 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk
 import random
+import os
 
-# Functie om het Galgje spel te starten
-def start_galgje():
-    naam = naam_entry.get()
 
-    if not naam:
-        messagebox.showwarning("Fout", "Vul uw naam in!")
-        return
+# Functie voor het spel 'Raad het Nummer'
+class RaadHetNummer(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.pogingen = 8
+        self.willekeurig_getal = random.randint(1, 100)
 
-    moeilijkheidsgraad = moeilijkheidsgraad_var.get()
+        self.label = tk.Label(self, text="Raad het nummer tussen 1 en 100:", font=("Arial", 16))
+        self.label.pack(pady=10)
 
-    if moeilijkheidsgraad == "makkelijk":
-        bestand = "galgjemakkelijk.txt"
-    elif moeilijkheidsgraad == "gemiddeld":
-        bestand = "galgjegemiddeld.txt"
-    elif moeilijkheidsgraad == "moeilijk":
-        bestand = "galgjemoeilijk.txt"
-    else:
-        messagebox.showwarning("Fout", "Selecteer een moeilijkheidsgraad!")
-        return
+        self.entry = tk.Entry(self, font=("Arial", 14))
+        self.entry.pack(pady=10)
 
-    try:
-        with open(bestand, 'r') as file:
-            woorden = file.readlines()
-    except FileNotFoundError:
-        messagebox.showerror("Fout", f"Bestand {bestand} niet gevonden!")
-        return
+        self.result_label = tk.Label(self, text="", font=("Arial", 14), fg="blue")
+        self.result_label.pack(pady=10)
 
-    woord = random.choice(woorden).strip()
-    galgje_spel(naam, woord)
+        self.button = tk.Button(self, text="Raad", command=self.raad_nummer, font=("Arial", 12), bg="lightblue")
+        self.button.pack(pady=10)
 
-# Functie voor het spel zelf
-def galgje_spel(naam, woord):
-    geraden_letters = []
-    pogingen = 8
-    pogingen_incorrect = 0
+        self.pogingen_label = tk.Label(self, text=f"Pogingen over: {self.pogingen}", font=("Arial", 14))
+        self.pogingen_label.pack(pady=10)
 
-    def raad_letter():
-        nonlocal pogingen_incorrect
-        gok = letter_entry.get().lower()
-
-        if not gok or len(gok) != 1 or not gok.isalpha():
-            messagebox.showwarning("Fout", "Voer één letter in (a-z)!")
-            return
-
-        if gok in geraden_letters:
-            messagebox.showwarning("Fout", f"Je hebt de letter '{gok}' al geraden.")
-            return
-
-        if gok in woord:
-            geraden_letters.append(gok)
-            update_woord()
-            if "_" not in beeldscherm_woord:
-                messagebox.showinfo("Gewonnen", f"Goed gedaan, {naam}! Je hebt het woord '{woord}' geraden!")
-                galgje_venster.destroy()
-        else:
-            pogingen_incorrect += 1
-            pogingen_label.config(text=f"Je hebt nog {pogingen - pogingen_incorrect} pogingen over.")
-            if pogingen_incorrect == pogingen:
-                messagebox.showinfo("Verloren", f"Game over, {naam}. Het woord was '{woord}'.")
-                galgje_venster.destroy()
-
-        letter_entry.delete(0, tk.END)
-
-    def update_woord():
-        nonlocal beeldscherm_woord
-        beeldscherm_woord = [letter if letter in geraden_letters else "_" for letter in woord]
-        woord_label.config(text=" ".join(beeldscherm_woord))
-
-    # Maak een nieuw venster voor Galgje
-    galgje_venster = tk.Toplevel()
-    galgje_venster.title("Galgje")
-
-    tk.Label(galgje_venster, text=f"Welkom, {naam}, bij Galgje!", font=("Arial", 14)).pack(pady=10)
-
-    beeldscherm_woord = ["_" for _ in woord]
-    woord_label = tk.Label(galgje_venster, text=" ".join(beeldscherm_woord), font=("Arial", 24))
-    woord_label.pack(pady=10)
-
-    pogingen_label = tk.Label(galgje_venster, text=f"Je hebt nog {pogingen - pogingen_incorrect} pogingen over.")
-    pogingen_label.pack(pady=10)
-
-    letter_entry = tk.Entry(galgje_venster, font=("Arial", 14))
-    letter_entry.pack(pady=5)
-
-    gok_button = tk.Button(galgje_venster, text="Raad", command=raad_letter, font=("Arial", 14))
-    gok_button.pack(pady=5)
-
-# Functie voor het spel "Raad het Nummer"
-def start_raad_het_nummer():
-    naam = naam_entry.get()
-
-    if not naam:
-        messagebox.showwarning("Fout", "Vul uw naam in!")
-        return
-
-    nummer_spel_venster = tk.Toplevel()
-    nummer_spel_venster.title("Raad het Nummer")
-
-    willekeurig_getal = random.randint(1, 100)
-    pogingen = 8
-    pogingen_over = pogingen
-
-    def check_gok():
-        nonlocal pogingen_over
+    def raad_nummer(self):
         try:
-            gok = int(gok_entry.get())
-            if gok == willekeurig_getal:
-                messagebox.showinfo("Gefeliciteerd!", f"Goed gedaan, {naam}! Je hebt het getal {willekeurig_getal} geraden.")
-                nummer_spel_venster.destroy()
-            elif gok < willekeurig_getal:
-                result_label.config(text="Het getal is hoger.")
+            gok = int(self.entry.get())
+            if gok == self.willekeurig_getal:
+                self.result_label.config(text=f"Goed gedaan! Het nummer was {self.willekeurig_getal}.", fg="green")
+                self.button.config(state='disabled')
+            elif gok < self.willekeurig_getal:
+                self.result_label.config(text="Het nummer is hoger.", fg="blue")
             else:
-                result_label.config(text="Het getal is lager.")
+                self.result_label.config(text="Het nummer is lager.", fg="blue")
 
-            pogingen_over -= 1
-            pogingen_label.config(text=f"Je hebt nog {pogingen_over} pogingen over.")
-
-            if pogingen_over == 0:
-                messagebox.showinfo("Game Over", f"Je pogingen zijn op. Het juiste getal was {willekeurig_getal}.")
-                nummer_spel_venster.destroy()
+            self.pogingen -= 1
+            if self.pogingen == 0:
+                self.result_label.config(text=f"Game over! Het juiste nummer was {self.willekeurig_getal}.", fg="red")
+                self.button.config(state='disabled')
+            self.pogingen_label.config(text=f"Pogingen over: {self.pogingen}")
         except ValueError:
-            messagebox.showerror("Fout", "Voer een geldig getal in.")
+            self.result_label.config(text="Vul een geldig nummer in.", fg="red")
 
-    # GUI voor Raad het Nummer
-    tk.Label(nummer_spel_venster, text=f"Welkom, {naam}! Ik heb een getal tussen de 1 en 100 gekozen.").pack(pady=10)
-    tk.Label(nummer_spel_venster, text="Probeer het getal te raden.").pack(pady=10)
 
-    gok_entry = tk.Entry(nummer_spel_venster)
-    gok_entry.pack(pady=5)
+# Functie voor het spel 'Galgje' met moeilijkheidsgraden
+class Galgje(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.pogingen = 8
+        self.geraden_letters = []
+        self.woord = ""
 
-    gok_button = tk.Button(nummer_spel_venster, text="Raad", command=check_gok, font=("Arial", 14))
-    gok_button.pack(pady=5)
+        self.label = tk.Label(self, text="Welkom bij Galgje!", font=("Arial", 16))
+        self.label.pack(pady=10)
 
-    result_label = tk.Label(nummer_spel_venster, text="")
-    result_label.pack(pady=5)
+        # Moeilijkheidsgraad kiezen
+        self.moeilijkheidsgraad_label = tk.Label(self, text="Kies de moeilijkheidsgraad:", font=("Arial", 14))
+        self.moeilijkheidsgraad_label.pack(pady=5)
 
-    pogingen_label = tk.Label(nummer_spel_venster, text=f"Je hebt {pogingen} pogingen.")
-    pogingen_label.pack(pady=10)
+        self.moeilijkheidsgraad = ttk.Combobox(self, values=["makkelijk", "gemiddeld", "moeilijk"], font=("Arial", 12))
+        self.moeilijkheidsgraad.pack(pady=10)
 
-# Hoofdmenu van de appstore
-def open_appstore():
-    root = tk.Tk()
-    root.title("PlayNation")
+        self.start_button = tk.Button(self, text="Start Spel", command=self.start_galgje, font=("Arial", 12),
+                                      bg="lightgreen")
+        self.start_button.pack(pady=10)
 
-    # Naam invoer
-    global naam_entry
-    tk.Label(root, text="Voer uw naam in:", font=("Arial", 14)).pack(pady=10)
-    naam_entry = tk.Entry(root, font=("Arial", 14))
-    naam_entry.pack(pady=5)
+        self.woord_label = tk.Label(self, text="_", font=("Arial", 18))
+        self.woord_label.pack(pady=10)
 
-    # Moeilijkheidsgraad selectie voor Galgje
-    global moeilijkheidsgraad_var
-    moeilijkheidsgraad_var = tk.StringVar(value="")
+        self.result_label = tk.Label(self, text="", font=("Arial", 14))
+        self.result_label.pack(pady=10)
 
-    tk.Label(root, text="Kies de moeilijkheidsgraad (voor Galgje):", font=("Arial", 14)).pack(pady=10)
-    tk.Radiobutton(root, text="Makkelijk", variable=moeilijkheidsgraad_var, value="makkelijk", font=("Arial", 12)).pack()
-    tk.Radiobutton(root, text="Gemiddeld", variable=moeilijkheidsgraad_var, value="gemiddeld", font=("Arial", 12)).pack()
-    tk.Radiobutton(root, text="Moeilijk", variable=moeilijkheidsgraad_var, value="moeilijk", font=("Arial", 12)).pack()
+        self.entry = tk.Entry(self, font=("Arial", 14))
+        self.entry.pack(pady=10)
 
-    # Knoppen voor spelletjes
-    tk.Label(root, text="Kies een spel:", font=("Arial", 16)).pack(pady=20)
+        self.button = tk.Button(self, text="Raad de letter", command=self.raad_letter, font=("Arial", 12),
+                                bg="lightblue", state="disabled")
+        self.button.pack(pady=10)
 
-    btn_galgje = tk.Button(root, text="Speel Galgje", command=start_galgje, width=25, font=("Arial", 14))
-    btn_galgje.pack(pady=10)
+        self.pogingen_label = tk.Label(self, text=f"Pogingen over: {self.pogingen}", font=("Arial", 14))
+        self.pogingen_label.pack(pady=10)
 
-    btn_nummer = tk.Button(root, text="Speel Raad het Nummer", command=start_raad_het_nummer, width=25, font=("Arial", 14))
-    btn_nummer.pack(pady=10)
+    # Functie om het spel te starten
+    def start_galgje(self):
+        moeilijkheidsgraad = self.moeilijkheidsgraad.get()
 
-    btn_afsluiten = tk.Button(root, text="Afsluiten", command=root.quit, width=25, font=("Arial", 14))
-    btn_afsluiten.pack(pady=10)
+        # Bestand kiezen op basis van moeilijkheidsgraad
+        if moeilijkheidsgraad == "makkelijk":
+            bestandsnaam = "galgjemakkelijk.txt"
+        elif moeilijkheidsgraad == "gemiddeld":
+            bestandsnaam = "galgjegemiddeld.txt"
+        elif moeilijkheidsgraad == "moeilijk":
+            bestandsnaam = "galgjemoeilijk.txt"
+        else:
+            self.result_label.config(text="Kies een geldige moeilijkheidsgraad", fg="red")
+            return
 
-    root.mainloop()
+        if os.path.exists(bestandsnaam):
+            with open(bestandsnaam) as file:
+                woorden = file.readlines()
+            self.woord = random.choice(woorden).strip()
+            self.geraden_letters = []
+            self.pogingen = 8
+            self.update_woord_label()
+            self.button.config(state="normal")
+            self.start_button.config(state="disabled")
+            self.result_label.config(text="")
+            self.pogingen_label.config(text=f"Pogingen over: {self.pogingen}")
+        else:
+            self.result_label.config(text=f"Kan bestand {bestandsnaam} niet vinden.", fg="red")
 
-# Start de GUI appstore
-open_appstore()
+    # Update het label van het woord met geraden letters
+    def update_woord_label(self):
+        beeldscherm_woord = [letter if letter in self.geraden_letters else "_" for letter in self.woord]
+        self.woord_label.config(text=" ".join(beeldscherm_woord))
+
+    # Functie voor het raden van een letter
+    def raad_letter(self):
+        letter = self.entry.get().lower()
+        if len(letter) == 1 and letter.isalpha():
+            if letter in self.geraden_letters:
+                self.result_label.config(text=f"Je hebt de letter '{letter}' al geraden.", fg="orange")
+            elif letter in self.woord:
+                self.geraden_letters.append(letter)
+                self.result_label.config(text=f"Goed bezig! De letter '{letter}' zit in het woord.", fg="green")
+            else:
+                self.pogingen -= 1
+                self.result_label.config(text=f"Jammer! De letter '{letter}' zit niet in het woord.", fg="red")
+
+            self.pogingen_label.config(text=f"Pogingen over: {self.pogingen}")
+            self.update_woord_label()
+            self.entry.delete(0, tk.END)
+
+            if "_" not in self.woord_label.cget("text"):
+                self.result_label.config(text=f"Gefeliciteerd! Je hebt het woord '{self.woord}' geraden.", fg="green")
+                self.button.config(state="disabled")
+
+            if self.pogingen == 0:
+                self.result_label.config(text=f"Game over! Het woord was '{self.woord}'.", fg="red")
+                self.button.config(state="disabled")
+        else:
+            self.result_label.config(text="Voer een geldige letter in.", fg="red")
+
+
+# Functie voor het starttabblad met 'PlayNation'
+class StartScherm(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.label = tk.Label(self, text="PlayNation", font=("Arial", 48, "bold"), fg="blue")
+        self.label.pack(pady=100)
+
+        self.instructies = tk.Label(self, text="Welkom bij PlayNation! Kies een spel hierboven.", font=("Arial", 24))
+        self.instructies.pack(pady=20)
+
+
+# Hoofdprogramma met drie tabbladen (voor de startpagina en de twee spellen)
+class GameApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("PlayNation")
+        self.geometry("600x500")
+
+        # Zet de achtergrondkleur
+        self.configure(bg='lightblue')
+
+        tab_control = ttk.Notebook(self)
+
+        start_tab = StartScherm(tab_control)
+        tab1 = RaadHetNummer(tab_control)
+        tab2 = Galgje(tab_control)
+
+        tab_control.add(start_tab, text="PlayNation")
+        tab_control.add(tab1, text="Raad het Nummer")
+        tab_control.add(tab2, text="Galgje")
+
+        tab_control.pack(expand=1, fill="both")
+
+
+# Start de applicatie
+if __name__ == "__main__":
+    app = GameApp()
+    app.mainloop()
